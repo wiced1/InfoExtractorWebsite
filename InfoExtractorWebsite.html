@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Info Extractor</title>
+    <style>
+        body {
+            background-color: black;
+            color: #ff4d4d;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            position: relative;
+        }
+        #infoBox {
+            background-color: rgba(17, 17, 17, 0.8);
+            border: 2px solid #ff1a1a;
+            padding: 20px;
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+            display: none;
+            position: absolute;
+            z-index: 1;
+        }
+        h1 {
+            text-align: center;
+            color: #ff4d4d;
+            margin-bottom: 20px;
+        }
+        .info-item {
+            margin-bottom: 15px;
+        }
+        .info-label {
+            color: #ff1a1a;
+            font-weight: bold;
+        }
+        #webcamFeed {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+            display: none;
+        }
+        #readInfo {
+            background-color: #ff1a1a;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 1.2em;
+            position: relative;
+            z-index: 2;
+        }
+        #readInfo:hover {
+            background-color: #ff4d4d;
+        }
+    </style>
+</head>
+<body>
+    <video id="webcamFeed" autoplay></video>
+    <div id="infoBox">
+        <h1>Info Extractor</h1>
+        <div id="ip" class="info-item"><span class="info-label">IP Address:</span> <span id="ipAddress">Waiting for permission...</span></div>
+        <div id="webcamStatus" class="info-item"><span class="info-label">Webcam:</span> <span id="webcamResult">Waiting for permission...</span></div>
+        <div id="microphoneStatus" class="info-item"><span class="info-label">Microphone:</span> <span id="microphoneResult">Waiting for permission...</span></div>
+        <div id="cookiesStatus" class="info-item"><span class="info-label">Cookies:</span> <span id="cookies">Waiting for permission...</span></div>
+        <div id="browserInfo" class="info-item"><span class="info-label">Browser:</span> <span id="browser">Waiting for permission...</span></div>
+        <div id="screenResolution" class="info-item"><span class="info-label">Screen Resolution:</span> <span id="resolution">Waiting for permission...</span></div>
+        <div id="colorDepth" class="info-item"><span class="info-label">Color Depth:</span> <span id="depth">Waiting for permission...</span></div>
+        <div id="osInfo" class="info-item"><span class="info-label">Operating System:</span> <span id="os">Waiting for permission...</span></div>
+        <div id="language" class="info-item"><span class="info-label">Language:</span> <span id="lang">Waiting for permission...</span></div>
+        <div id="onlineStatus" class="info-item"><span class="info-label">Online Status:</span> <span id="status">Waiting for permission...</span></div>
+        <div id="connectionType" class="info-item"><span class="info-label">Connection Type:</span> <span id="connection">Waiting for permission...</span></div>
+        <div id="batteryStatus" class="info-item"><span class="info-label">Battery Level:</span> <span id="battery">Waiting for permission...</span></div>
+        <div id="chargingStatus" class="info-item"><span class="info-label">Charging:</span> <span id="charging">Waiting for permission...</span></div>
+        <div id="locationStatus" class="info-item"><span class="info-label">Location:</span> <span id="location">Waiting for permission...</span></div>
+    </div>
+    <button id="readInfo" onclick="requestPermissions()">Read My Info</button>
+
+    <script>
+        async function requestPermissions() {
+            // Hide the button after it is clicked
+            document.getElementById('readInfo').style.display = 'none';
+
+            // Function to update the info box visibility
+            function updateInfoBox() {
+                document.getElementById('infoBox').style.display = 'block';
+            }
+
+            // Request webcam access
+            try {
+                const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                document.getElementById('webcamResult').textContent = 'Webcam access granted';
+                document.getElementById('webcamFeed').srcObject = videoStream;
+                document.getElementById('webcamFeed').style.display = 'block';
+            } catch (error) {
+                document.getElementById('webcamResult').textContent = 'Webcam access denied';
+            }
+
+            // Request microphone access
+            try {
+                const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                document.getElementById('microphoneResult').textContent = 'Microphone access granted';
+            } catch (error) {
+                document.getElementById('microphoneResult').textContent = 'Microphone access denied';
+            }
+
+            // Request location access
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        document.getElementById('location').textContent = `Lat: ${position.coords.latitude}, Long: ${position.coords.longitude}`;
+                        updateInfoBox();
+                    },
+                    function(error) {
+                        document.getElementById('location').textContent = 'Location access denied';
+                        updateInfoBox();
+                    }
+                );
+            } else {
+                document.getElementById('location').textContent = 'Location not supported';
+                updateInfoBox();
+            }
+
+            // Fetch IP Address and other details after permissions are granted
+            setTimeout(() => {
+                fetch('https://api.ipify.org?format=json')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('ipAddress').textContent = data.ip;
+                    });
+
+                // Browser Information
+                document.getElementById('browser').textContent = navigator.userAgent;
+
+                // Screen Resolution
+                document.getElementById('resolution').textContent = `${window.screen.width}x${window.screen.height}`;
+
+                // Color Depth
+                document.getElementById('depth').textContent = `${window.screen.colorDepth}-bit`;
+
+                // Operating System
+                document.getElementById('os').textContent = navigator.platform;
+
+                // Language
+                document.getElementById('lang').textContent = navigator.language;
+
+                // Online Status
+                document.getElementById('status').textContent = navigator.onLine ? 'Online' : 'Offline';
+
+                // Connection Type
+                const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                document.getElementById('connection').textContent = connection ? connection.effectiveType : 'Unknown';
+
+                // Battery Status
+                navigator.getBattery().then(function(battery) {
+                    document.getElementById('battery').textContent = `${battery.level * 100}%`;
+                    document.getElementById('charging').textContent = battery.charging ? 'Yes' : 'No';
+                });
+
+                // Cookies
+                const cookies = document.cookie ? document.cookie : 'No cookies found';
+                document.getElementById('cookies').textContent = cookies;
+
+                // Show the info box after data fetching
+                updateInfoBox();
+            }, 2000); // Wait 2 seconds before displaying info
+        }
+    </script>
+</body>
+</html>
